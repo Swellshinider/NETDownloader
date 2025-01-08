@@ -1,0 +1,6 @@
+# Database file
+*.sqlite3
+
+# Build files
+*\bin
+*\obj
