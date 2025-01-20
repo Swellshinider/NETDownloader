@@ -56,7 +56,7 @@ internal static partial class Program
 			{
 				Logger.Debug("Application is not running with administrator privileges.");
 				Logger.Debug("Requesting permission to restart as administrator.");
-				var result = MessageBox.Show("NETDownloader works better with administrator privileges\n. Do you want to restart as administrator?",
+				var result = MessageBox.Show("NETDownloader works better with administrator privileges.\nDo you want to restart as administrator?",
 											 "Administrator Privileges Warn",
 											 MessageBoxButtons.YesNo,
 											 MessageBoxIcon.Warning);

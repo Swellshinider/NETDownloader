@@ -1,3 +1,5 @@
+using LealForms.Enums;
+using LealForms.Extensions;
 using Newtonsoft.Json;
 
 namespace NETDownloader.Configuration;
@@ -25,6 +27,9 @@ public static class SettingsManager
 		catch (Exception ex)
 		{
 			Program.Logger.Error($"Failed to save settings", ex);
+			
+			if (ex.HandleException(ErrorType.Process).Equals(DialogResult.Retry))
+				Save();
 		}
 	}
 
@@ -45,7 +50,7 @@ public static class SettingsManager
 		}
 		catch (Exception ex)
 		{
-			Program.Logger.Error($"Failed to retrieve settings", ex);
+			Program.Logger.Error($"Failed to retrieve settings, using defaults.", ex);
 			return UserSettings.Default;
 		}
 	}
