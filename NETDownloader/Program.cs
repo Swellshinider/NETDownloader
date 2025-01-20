@@ -1,21 +1,22 @@
-using NETDownloader.View;
-using LForms.Extensions;
-using LForms.Enums;
-using NETDownloader.Configuration;
+using System.Diagnostics;
+using System.Security.Principal;
 using LealLogger;
 using LealLogger.Factory;
-using System.Security.Principal;
-using System.Diagnostics;
+using LealForms.Enums;
+using LealForms.Extensions;
+using NETDownloader.View;
 
 namespace NETDownloader;
 
-internal static class Program
+internal static partial class Program
 {
-	[System.Runtime.InteropServices.DllImport("kernel32.dll")]
-	private static extern bool AttachConsole(int dwProcessId);
+	[System.Runtime.InteropServices.LibraryImport("kernel32.dll")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static partial bool AttachConsole(int dwProcessId);
 
-	[System.Runtime.InteropServices.DllImport("kernel32.dll")]
-	private static extern bool FreeConsole();
+	[System.Runtime.InteropServices.LibraryImport("kernel32.dll")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static partial bool FreeConsole();
 
 	internal static Logger Logger => new LoggerBuilder()
 					.SetQueueCapacity(100)
@@ -57,7 +58,7 @@ internal static class Program
 		}
 		catch (Exception e)
 		{
-			Logging.Instance.Fatal("Fatal error occurred at Main()", e);
+			Logger.Fatal("Fatal error occurred at Main()", e);
 			e.HandleException(ErrorType.Critical);
 		}
 		finally

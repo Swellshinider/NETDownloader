@@ -2,10 +2,7 @@ param (
     [switch]$Release
 )
 
-if ($Release) {
-    dotnet build --configuration Release
-    dotnet run --project .\NETDownloader --configuration Release
-} else {
-    dotnet build --configuration Debug
-    dotnet run --project .\NETDownloader --configuration Debug
-}
+# Configuration based on the -r flag
+$configuration = if ($r) { "Release" } else { "Debug" }
+
+Start-Process -FilePath "dotnet" -ArgumentList "run --project .\NETDownloader\ --configuration $configuration"
