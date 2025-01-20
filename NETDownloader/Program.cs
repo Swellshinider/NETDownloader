@@ -24,13 +24,23 @@ internal static partial class Program
 
 	static Program()
 	{
-		var logDirectory = $@"{SettingsManager.SettingsDirectory}\\Logs";
-		Directory.CreateDirectory(logDirectory);
-		Logger = new LoggerBuilder()
-					.SetQueueCapacity(100)
-					.AddConsoleHandler(LogLevel.DEBUG)
-					.AddFileHandler($"{logDirectory}\\NETDownloader_[{DateTime.Now:dd-MM-yyyy}].log", LogLevel.DEBUG)
-					.Build();
+		try
+		{
+			var logDirectory = $@"{SettingsManager.SettingsDirectory}\\Logs";
+			Directory.CreateDirectory(logDirectory);
+			Logger = new LoggerBuilder()
+						.SetQueueCapacity(100)
+						.AddConsoleHandler(LogLevel.INFO)
+						.AddFileHandler(Path.Combine(logDirectory, $"NETDownloader_[{DateTime.Now:dd-MM-yyyy}].log"), LogLevel.DEBUG)
+						.Build();
+		}
+		catch (UnauthorizedAccessException)
+		{
+			Logger = new LoggerBuilder()
+						.SetQueueCapacity(100)
+						.AddConsoleHandler(LogLevel.DEBUG)
+						.Build();
+		}
 	}
 
 	[STAThread]
@@ -101,7 +111,7 @@ internal static partial class Program
 		catch (Exception ex)
 		{
 			Logger.Error("Failed to restart with administrator privileges", ex);
-			
+
 			if (ex.HandleException(ErrorType.Process).Equals(DialogResult.Retry))
 				RestartAsAdministrator();
 		}
