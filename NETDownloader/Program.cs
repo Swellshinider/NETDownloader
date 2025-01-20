@@ -7,6 +7,7 @@ using LealForms.Extensions;
 using NETDownloader.View;
 using NETDownloader.Configuration;
 using System.Runtime.InteropServices;
+using LealForms;
 
 namespace NETDownloader;
 
@@ -19,6 +20,16 @@ internal static partial class Program
 	[LibraryImport("kernel32.dll")]
 	[return: MarshalAs(UnmanagedType.Bool)]
 	private static partial bool FreeConsole();
+	
+	[LibraryImport("kernel32.dll")]
+	private static partial IntPtr GetConsoleWindow();
+	
+	[LibraryImport("user32.dll")]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static partial bool ShowWindow(IntPtr hWnd, int nCmdShow);
+	
+	private static readonly int SW_HIDE = 0;
+	private static readonly int SW_SHOW = 5;
 
 	internal static Logger Logger { get; }
 
@@ -34,12 +45,13 @@ internal static partial class Program
 						.AddFileHandler(Path.Combine(logDirectory, $"NETDownloader_[{DateTime.Now:dd-MM-yyyy}].log"), LogLevel.DEBUG)
 						.Build();
 		}
-		catch (UnauthorizedAccessException)
+		catch (UnauthorizedAccessException ue)
 		{
 			Logger = new LoggerBuilder()
 						.SetQueueCapacity(100)
 						.AddConsoleHandler(LogLevel.DEBUG)
 						.Build();
+			Logger.Warn("Logger loaded without file handler", ue);
 		}
 	}
 
@@ -48,7 +60,8 @@ internal static partial class Program
 	{
 		try
 		{
-			AttachConsole(-1); // Attach the console to the application
+			AttachConsole(-1);
+			HideConsole();
 			Logger.Info("Application started.");
 			var isAdministrator = IsAdministrator();
 
@@ -77,15 +90,21 @@ internal static partial class Program
 		}
 		catch (Exception e)
 		{
-			Logger?.Fatal("Fatal error occurred at Main()", e);
+			Logger.Fatal("Fatal error occurred at Main()", e);
 			e.HandleException(ErrorType.Critical);
 		}
 		finally
 		{
-			Logger?.Dispose();
-			FreeConsole(); // Detach the console when the application closes
+			Logger.Dispose();
+			FreeConsole();
 		}
 	}
+	
+	internal static void HideConsole() 
+		=> ShowWindow(GetConsoleWindow(), SW_HIDE);
+	
+	internal static void ShowConsole() 
+		=> ShowWindow(GetConsoleWindow(), SW_SHOW);
 
 	private static bool IsAdministrator()
 	{

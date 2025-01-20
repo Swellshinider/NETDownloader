@@ -9,7 +9,10 @@ public static class SettingsManager
 	private static UserSettings? _settings;
 
 	public static UserSettings UserSettings
-		=> _settings ??= Retrieve();
+	{
+		get => _settings ??= Retrieve();
+		set => _settings = value;
+	}
 
 	public static string SettingsDirectory
 		=> Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + @"\NETDownloader";
@@ -20,14 +23,14 @@ public static class SettingsManager
 		{
 			Directory.CreateDirectory(SettingsDirectory);
 			var filePath = Path.Combine(SettingsDirectory, "Settings.json");
-			var jsonString = JsonConvert.SerializeObject(UserSettings, Formatting.Indented);
+			var jsonString = JsonConvert.SerializeObject(_settings!, Formatting.Indented);
 			File.WriteAllText(filePath, jsonString);
 			Program.Logger.Debug("Saving settings to: " + filePath);
 		}
 		catch (Exception ex)
 		{
 			Program.Logger.Error($"Failed to save settings", ex);
-			
+
 			if (ex.HandleException(ErrorType.Process).Equals(DialogResult.Retry))
 				Save();
 		}
@@ -44,7 +47,7 @@ public static class SettingsManager
 				Program.Logger.Warn("Settings file not found, using defaults.");
 				return UserSettings.Default;
 			}
-			
+
 			var jsonString = File.ReadAllText(filePath);
 			return JsonConvert.DeserializeObject<UserSettings>(jsonString) ?? UserSettings.Default;
 		}
