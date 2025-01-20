@@ -8,8 +8,4 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="LealForms.LForms" Version="1.4.1" />
-  </ItemGroup>
-
 </Project>

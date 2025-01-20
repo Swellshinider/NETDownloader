@@ -1,6 +1,9 @@
 # Database file
 *.sqlite3
 
+# vscode
+*\.vscode
+
 # Build files
 *\bin
 *\obj
