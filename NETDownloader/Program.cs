@@ -5,24 +5,33 @@ using LealLogger.Factory;
 using LealForms.Enums;
 using LealForms.Extensions;
 using NETDownloader.View;
+using NETDownloader.Configuration;
+using System.Runtime.InteropServices;
 
 namespace NETDownloader;
 
 internal static partial class Program
 {
-	[System.Runtime.InteropServices.LibraryImport("kernel32.dll")]
-    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
-    private static partial bool AttachConsole(int dwProcessId);
+	[LibraryImport("kernel32.dll")]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static partial bool AttachConsole(int dwProcessId);
 
-	[System.Runtime.InteropServices.LibraryImport("kernel32.dll")]
-    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
-    private static partial bool FreeConsole();
+	[LibraryImport("kernel32.dll")]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static partial bool FreeConsole();
 
-	internal static Logger Logger => new LoggerBuilder()
+	internal static Logger Logger { get; }
+
+	static Program()
+	{
+		var logDirectory = $@"{SettingsManager.SettingsDirectory}\\Logs";
+		Directory.CreateDirectory(logDirectory);
+		Logger = new LoggerBuilder()
 					.SetQueueCapacity(100)
 					.AddConsoleHandler(LogLevel.DEBUG)
-					.AddFileHandler($"NETDownloader_[{DateTime.Now:dd-MM-yyyy}].trace", LogLevel.DEBUG)
+					.AddFileHandler($"{logDirectory}\\NETDownloader_[{DateTime.Now:dd-MM-yyyy}].log", LogLevel.DEBUG)
 					.Build();
+	}
 
 	[STAThread]
 	internal static void Main()
@@ -58,12 +67,12 @@ internal static partial class Program
 		}
 		catch (Exception e)
 		{
-			Logger.Fatal("Fatal error occurred at Main()", e);
+			Logger?.Fatal("Fatal error occurred at Main()", e);
 			e.HandleException(ErrorType.Critical);
 		}
 		finally
 		{
-			Logger.Dispose();
+			Logger?.Dispose();
 			FreeConsole(); // Detach the console when the application closes
 		}
 	}
@@ -91,10 +100,10 @@ internal static partial class Program
 		}
 		catch (Exception ex)
 		{
-			MessageBox.Show("Failed to restart with administrator privileges: " + ex.Message,
-							"Error",
-							MessageBoxButtons.OK,
-							MessageBoxIcon.Error);
+			Logger.Error("Failed to restart with administrator privileges", ex);
+			
+			if (ex.HandleException(ErrorType.Process).Equals(DialogResult.Retry))
+				RestartAsAdministrator();
 		}
 	}
 }
