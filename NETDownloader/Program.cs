@@ -30,7 +30,7 @@ internal static partial class Program
 	
 	private static readonly int SW_HIDE = 0;
 	private static readonly int SW_SHOW = 5;
-	private static MainForm _mainView;
+	private static MainView _mainView;
 
 	internal static Logger Logger { get; }
 

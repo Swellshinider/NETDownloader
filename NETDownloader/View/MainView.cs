@@ -6,7 +6,7 @@ using NETDownloader.Configuration;
 
 namespace NETDownloader.View;
 
-internal sealed class MainForm : LealForm
+internal sealed class MainView : LealForm
 {
 	private readonly MenuStrip _menuStrip = new();
 	private readonly LealSeparator _topSeparator = new();
@@ -18,7 +18,7 @@ internal sealed class MainForm : LealForm
 	private int _lastSplitterLeftSize = 0;
 	private bool _isResizing = false;
 
-	public MainForm() : base(true)
+	public MainView() : base(true)
 	{
 		Text = $"NETDownloader | by: Swellshinider";
 		Size = new(1280, 720); // 720p
