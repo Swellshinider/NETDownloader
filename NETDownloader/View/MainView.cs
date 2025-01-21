@@ -1,8 +1,10 @@
+using LealForms.Controls.Buttons;
 using LealForms.Controls.Forms;
 using LealForms.Controls.Miscellaneous;
 using LealForms.Controls.Panels;
 using LealForms.Extensions;
 using NETDownloader.Configuration;
+using NETDownloader.View.Containers;
 
 namespace NETDownloader.View;
 
@@ -10,22 +12,15 @@ internal sealed class MainView : LealForm
 {
 	private readonly MenuStrip _menuStrip = new();
 	private readonly LealSeparator _topSeparator = new();
-	private readonly SplitContainer _backgroundPanel = new();
-	private readonly LealPanel _leftPanel = new(false, true);
 	private readonly LealPanel _containerPanel = new(false, true);
+	private readonly DashboardView _dashboardView = new();
 	private readonly UserSettings _settings = SettingsManager.UserSettings;
-
-	private int _lastSplitterLeftSize = 0;
-	private bool _isResizing = false;
 
 	public MainView() : base(true)
 	{
 		Text = $"NETDownloader | by: Swellshinider";
 		Size = new(1280, 720); // 720p
 		MinimumSize = new(640, 320); // 360p
-		ResizeBegin += Form_ResizeBegin;
-		Resize += Form_Resizing;
-		ResizeEnd += Form_ResizeEnd;
 	}
 	
 	public UserSettings Settings => _settings;
@@ -79,24 +74,9 @@ internal sealed class MainView : LealForm
 		this.Add(_topSeparator);
 		_topSeparator.DockTopLeftRightWithPadding(_menuStrip.Height, 0, 0);
 		
-		this.Add(_backgroundPanel);
-		_backgroundPanel.SuspendLayout();
-		_backgroundPanel.DockFillWithPadding(0, 0, 0, _menuStrip.Height + _topSeparator.Height);
-		_backgroundPanel.Panel1MinSize = 64;
-		_backgroundPanel.Panel2MinSize = 490;
-		_backgroundPanel.SplitterDistance = _settings.SplitterDistance;
-		_backgroundPanel.SplitterWidth = _topSeparator.LineThickness;
-		_backgroundPanel.SplitterMoving += SplitterMoving;
-		_backgroundPanel.SplitterMoved += SplitterMoved;
-		_backgroundPanel.MouseUp += (s, e) => _containerPanel.Focus();
-		
-		_backgroundPanel.Panel1.Add(_leftPanel);
-		_backgroundPanel.Panel2.Add(_containerPanel);
-		
-		_leftPanel.Dock = DockStyle.Fill;
-		_containerPanel.Dock = DockStyle.Fill;
-		
-		_backgroundPanel.ResumeLayout(true);
+		this.Add(_containerPanel);
+		_containerPanel.DockFillWithPadding(0, 0, 0, _menuStrip.Height + _topSeparator.Height);
+		_containerPanel.Add(_dashboardView);
 		
 		Program.Logger.Debug("Base Controls loaded.");
 		#endregion
@@ -114,9 +94,7 @@ internal sealed class MainView : LealForm
 			}
 		}
 		
-		_backgroundPanel.BackColor = ColorPalette.HighLightColor;
 		_containerPanel.BackColor = ColorPalette.BackgroundColor;
-		_leftPanel.BackColor = ColorPalette.BackgroundColor;
 		
 		Program.Logger.Debug("Themes loaded.");
 		#endregion
@@ -150,8 +128,9 @@ internal sealed class MainView : LealForm
 		_menuStrip.Items.Add(helpMenu);
 		helpMenu.DropDownItems.Add(CreateMenuItem("About", Keys.F1));
 		helpMenu.DropDownItems.Add(new ToolStripSeparator());
-		helpMenu.DropDownItems.Add(CreateMenuItem("Documentation"));
 		helpMenu.DropDownItems.Add(CreateMenuItem("Report Issue"));
+		helpMenu.DropDownItems.Add(CreateMenuItem("Disclaimer"));
+		helpMenu.DropDownItems.Add(CreateMenuItem("Documentation"));
 		helpMenu.DropDownItems.Add(CreateMenuItem("Release Notes"));
 		helpMenu.DropDownItems.Add(new ToolStripSeparator());
 		helpMenu.DropDownItems.Add(CreateMenuItem("View License"));
@@ -169,38 +148,6 @@ internal sealed class MainView : LealForm
 			Program.HideConsole();
 	}
 
-	private void Form_ResizeBegin(object? sender, EventArgs e)
-	{
-		_isResizing = true;
-		_lastSplitterLeftSize = _backgroundPanel.SplitterDistance;
-	}
-
-	private void Form_Resizing(object? sender, EventArgs e)
-		=> _backgroundPanel.SplitterDistance = _lastSplitterLeftSize;
-
-	private void Form_ResizeEnd(object? sender, EventArgs e)
-	{
-		_isResizing = false;
-		_backgroundPanel.SplitterDistance = _lastSplitterLeftSize;
-		_settings.SplitterDistance = _lastSplitterLeftSize;
-	}
-
-	private void SplitterMoving(object? sender, SplitterCancelEventArgs e)
-	{
-		// TODO: check when splitter has a good size to display only icons on the left panel
-	}
-
-	private void SplitterMoved(object? sender, SplitterEventArgs e)
-	{
-		if (!_isResizing) 
-		{
-			_lastSplitterLeftSize = _backgroundPanel.SplitterDistance;
-			_settings.SplitterDistance = _lastSplitterLeftSize;
-		}
-		
-		_containerPanel.Focus();
-	}
-	
 	private static ToolStripMenuItem CreateMenuItem(string text, Keys shortcutKeys = Keys.None, EventHandler? handler = null)
 	{
 		var item = new ToolStripMenuItem(text)
