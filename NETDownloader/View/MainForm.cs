@@ -26,8 +26,9 @@ internal sealed class MainForm : LealForm
 		ResizeBegin += Form_ResizeBegin;
 		Resize += Form_Resizing;
 		ResizeEnd += Form_ResizeEnd;
-		FormClosing += Form_Closing;
 	}
+	
+	public UserSettings Settings => _settings;
 
 	public override void ReDraw()
 	{
@@ -123,21 +124,31 @@ internal sealed class MainForm : LealForm
 
 	private void MenuStripLoad_Settings()
 	{
-		var fileMenu = CreateMenuItem("Settings");
-
-		_menuStrip.Items.Add(fileMenu);
-		fileMenu.DropDownItems.Add(CreateMenuItem("Appearance"));
-		fileMenu.DropDownItems.Add(CreateMenuItem("Preferences", shortcutKeys: Keys.Control | Keys.OemPeriod));
-		fileMenu.DropDownItems.Add(new ToolStripSeparator());
-		fileMenu.DropDownItems.Add(CreateMenuItem("Exit", shortcutKeys: Keys.Alt | Keys.F4, handler: (s, e) => Close()));
+		var settingsMenu = CreateMenuItem("Settings");
+		settingsMenu.DropDown.BackColor = ColorPalette.BackgroundColor;
+		
+		settingsMenu.ForeColor = ColorPalette.ForegroundColor;
+		settingsMenu.DropDownOpened += (s, e) => settingsMenu.ForeColor = Color.Black;
+		settingsMenu.DropDownClosed += (s, e) => settingsMenu.ForeColor = ColorPalette.ForegroundColor;
+		
+		_menuStrip.Items.Add(settingsMenu);
+		settingsMenu.DropDownItems.Add(CreateMenuItem("Appearance"));
+		settingsMenu.DropDownItems.Add(CreateMenuItem("Preferences", Keys.Control | Keys.OemPeriod));
+		settingsMenu.DropDownItems.Add(new ToolStripSeparator());
+		settingsMenu.DropDownItems.Add(CreateMenuItem("Exit", Keys.Alt | Keys.F4, (s, e) => Close()));
 	}
 
 	private void MenuStripLoad_Help()
 	{
 		var helpMenu = CreateMenuItem("Help");
+		helpMenu.DropDown.BackColor = ColorPalette.BackgroundColor;
+		
+		helpMenu.ForeColor = ColorPalette.ForegroundColor;
+		helpMenu.DropDownOpened += (s, e) => helpMenu.ForeColor = Color.Black;
+		helpMenu.DropDownClosed += (s, e) => helpMenu.ForeColor = ColorPalette.ForegroundColor;
 
 		_menuStrip.Items.Add(helpMenu);
-		helpMenu.DropDownItems.Add(CreateMenuItem("About", shortcutKeys: Keys.F1));
+		helpMenu.DropDownItems.Add(CreateMenuItem("About", Keys.F1));
 		helpMenu.DropDownItems.Add(new ToolStripSeparator());
 		helpMenu.DropDownItems.Add(CreateMenuItem("Documentation"));
 		helpMenu.DropDownItems.Add(CreateMenuItem("Report Issue"));
@@ -145,7 +156,7 @@ internal sealed class MainForm : LealForm
 		helpMenu.DropDownItems.Add(new ToolStripSeparator());
 		helpMenu.DropDownItems.Add(CreateMenuItem("View License"));
 		helpMenu.DropDownItems.Add(new ToolStripSeparator());
-		helpMenu.DropDownItems.Add(CreateMenuItem("Debug Console", shortcutKeys: Keys.Control | Keys.Shift | Keys.Y, ToggleConsole));
+		helpMenu.DropDownItems.Add(CreateMenuItem("Debug Console", Keys.Control | Keys.Shift | Keys.Y, ToggleConsole));
 	}
 
 	private void ToggleConsole(object? sender, EventArgs e)
@@ -173,13 +184,6 @@ internal sealed class MainForm : LealForm
 		_backgroundPanel.SplitterDistance = _lastSplitterLeftSize;
 		_settings.SplitterDistance = _lastSplitterLeftSize;
 	}
-	
-	private void Form_Closing(object? sender, FormClosingEventArgs e)
-	{
-		// TODO: check if has any process running before closing it
-		SettingsManager.UserSettings = _settings;
-		SettingsManager.Save();
-	}
 
 	private void SplitterMoving(object? sender, SplitterCancelEventArgs e)
 	{
@@ -199,7 +203,12 @@ internal sealed class MainForm : LealForm
 	
 	private static ToolStripMenuItem CreateMenuItem(string text, Keys shortcutKeys = Keys.None, EventHandler? handler = null)
 	{
-		var item = new ToolStripMenuItem(text);
+		var item = new ToolStripMenuItem(text)
+		{
+			ForeColor = ColorPalette.ForegroundColor,
+			BackColor = ColorPalette.BackgroundColor
+		};
+		
 		if (shortcutKeys != Keys.None)
 		{
 			item.ShortcutKeys = shortcutKeys;

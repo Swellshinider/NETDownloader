@@ -30,6 +30,7 @@ internal static partial class Program
 	
 	private static readonly int SW_HIDE = 0;
 	private static readonly int SW_SHOW = 5;
+	private static MainForm _mainView;
 
 	internal static Logger Logger { get; }
 
@@ -52,6 +53,11 @@ internal static partial class Program
 						.AddConsoleHandler(LogLevel.DEBUG)
 						.Build();
 			Logger.Warn("Logger loaded without file handler", ue);
+		}
+		finally 
+		{
+			ApplicationConfiguration.Initialize();
+			_mainView = new();
 		}
 	}
 
@@ -85,8 +91,7 @@ internal static partial class Program
 			}
 
 			Logger.Info($"Application running in {(isAdministrator ? "Administrator" : "Normal")} mode");
-			ApplicationConfiguration.Initialize();
-			Application.Run(new MainForm());
+			Application.Run(_mainView);
 		}
 		catch (Exception e)
 		{
@@ -95,6 +100,10 @@ internal static partial class Program
 		}
 		finally
 		{
+			_mainView.Settings.Location = _mainView.Location;
+			SettingsManager.UserSettings = _mainView.Settings;
+			SettingsManager.Save();
+			
 			Logger.Dispose();
 			FreeConsole();
 		}
