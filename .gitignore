@@ -3,6 +3,7 @@
 
 # vscode
 *\.vscode
+*\.editorconfig
 
 # Build files
 *\bin

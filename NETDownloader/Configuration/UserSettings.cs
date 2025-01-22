@@ -7,15 +7,37 @@ public class UserSettings
 {
 	public static UserSettings Default => new()
 	{
-		ViewData = new()
+		Location = new(0, 0),
+		Size = new(1280, 720),
+		CardHeight = 150,
+		Maximized = false,
+		Colors = new() 
 		{
-			Location = new(0, 0),
-			Size = new(1280, 720),
-			LeftPanelWidth = 250,
-			BottomPanelHeight = 300
+			BackgroundColor = Color.FromArgb(34, 40, 49),
+			SecondaryBackgroundColor = Color.FromArgb(57, 62, 70),
+			ForegroundColor = Color.WhiteSmoke,
+			HighLightColor = Color.FromArgb(0, 173, 181),
+			ContrastBackColor = Color.FromArgb(238, 238, 238),
+			DownloadStartColor = Color.Red,
+			DownloadFinishedColor = Color.Blue
 		}
 	};
-	
-	[JsonPropertyName("view_data")]
-	public required ViewData ViewData { get; set; }
+
+	[JsonPropertyName("size")]
+	public Size Size { get; set; }
+
+	[JsonPropertyName("location")]
+	public Point Location { get; set; }
+
+	[JsonPropertyName("card_height")]
+	public int CardHeight { get; set; }
+
+	[JsonPropertyName("maximized")]
+	public bool Maximized { get; set; }
+
+	[JsonPropertyName("console_visible")]
+	public bool ConsoleVisible { get; set; }
+
+	[JsonPropertyName("colors")]
+	public required ColorPalette Colors { get; set; }
 }
