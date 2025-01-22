@@ -35,27 +35,38 @@ public sealed class FilePanel : LealPanel
 
 	protected override void LoadComponents()
 	{
+		Height = 100;
+
+		this.Add(_titleLabel);
 		_titleLabel.Text = $"{DownloadData.Data}";
 		_titleLabel.Height = 35;
 		_titleLabel.AutoSize = false;
 		_titleLabel.Dock = DockStyle.Top;
+		_titleLabel.ForeColor = SettingsManager.UserSettings.Colors.ForegroundColor;
 		_titleLabel.TextAlign = ContentAlignment.MiddleLeft;
-
+		
+		this.Add(_progressBar);
 		_progressBar.Dock = DockStyle.Bottom;
 		_progressBar.Height = 4;
 		_progressBar.Value = 0;
 		_progressBar.Maximum = 100;
 		_progressBar.BackColor = SettingsManager.UserSettings.Colors.BackgroundColor;
 
+		this.Add(_progressLabel);
 		_progressLabel.Text = $"Not started";
 		_progressLabel.Height = 35;
 		_progressLabel.AutoSize = false;
 		_progressLabel.Dock = DockStyle.Bottom;
+		_progressLabel.ForeColor = SettingsManager.UserSettings.Colors.ForegroundColor;
 		_progressLabel.TextAlign = ContentAlignment.MiddleLeft;
-		
+
+		this.Add(_buttonError);
 		_buttonError.Text = "Error details";
 		_buttonError.Visible = false;
+		_buttonError.ForeColor = SettingsManager.UserSettings.Colors.ForegroundColor;
 		_buttonError.DockBottomLeftWithPadding(_progressBar.Height + _progressLabel.Height, 0);
+
+		this.DockLeftRightWithPadding(0, 0);
 	}
 
 	public void Begin()

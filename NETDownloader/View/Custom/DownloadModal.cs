@@ -78,6 +78,7 @@ public sealed class DownloadModal : LealModal
 		_comboFileType.ForeColor = SettingsManager.UserSettings.Colors.ForegroundColor;
 		_comboFileType.BackColor = SettingsManager.UserSettings.Colors.SecondaryBackgroundColor;
 		_comboFileType.DropdownButton.ForeColor = SettingsManager.UserSettings.Colors.HighLightColor;
+		_comboFileType.ComboText.ResetText();
 		_comboFileType.AddItem(new LealComboItem("Series", TitleType.Series));
 		_comboFileType.AddItem(new LealComboItem("Movie", TitleType.Movie));
 		_comboFileType.AddItem(new LealComboItem("Song", TitleType.Song));
