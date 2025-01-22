@@ -12,5 +12,5 @@ public sealed record SeriesData : FileData
     public int Season { get; }
     public int Episode { get; }
 
-    public override string ToString() => $"{CleanedTitle} - S{Season:D2}E{Episode:D2}.{ExtensionText}";
+    public override string ToString() => $"{CleanedTitle} - S{Season:D2}E{Episode:D2}{ExtensionText}";
 }

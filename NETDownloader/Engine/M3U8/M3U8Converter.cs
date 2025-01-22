@@ -4,102 +4,92 @@ using Xabe.FFmpeg.Events;
 
 namespace NETDownloader.Engine.M3U8;
 
-public sealed class M3U8Converter : IDisposable
+public sealed class M3U8Converter
 {
-	public delegate void FileStarted(DownloadData fileData);
+	public delegate void FileStarted(DownloadData urlData);
 	public event FileStarted? OnFileStarted;
 
-	public delegate void FileProgress(DownloadData fileData, ConversionProgressEventArgs eventArgs);
+	public delegate void FileProgress(DownloadData urlData, ConversionProgressEventArgs eventArgs);
 	public event FileProgress? OnFileProgress;
 
-	public delegate void FileCompleted(DownloadData fileData, string finalPath, TimeSpan timeSpent);
+	public delegate void FileCompleted(DownloadData urlData, string finalPath, TimeSpan timeSpent);
 	public event FileCompleted? OnFileCompleted;
 
-	public delegate void FileCancelled(DownloadData fileData, CancellationToken cancellationToken);
+	public delegate void FileCancelled(DownloadData urlData, CancellationToken cancellationToken);
 	public event FileCancelled? OnFileCancelled;
 
-	public delegate void FileError(DownloadData fileData, Exception exception);
+	public delegate void FileError(DownloadData urlData, Exception exception, TimeSpan timeSpent);
 	public FileError? OnErrorHappened;
 
-	private readonly bool _gpuUsage;
-	private readonly SemaphoreSlim _semaphore;
-	private readonly CancellationTokenSource _cancellationTokenSource;
+	private readonly bool _useGpu;
+	private readonly int _maxThreads;
 
-	public M3U8Converter(bool gpuUsage, int maximumThreads)
+	public M3U8Converter(bool useGpu = true, int maxThreads = 4)
 	{
-		_gpuUsage = gpuUsage;
-		_semaphore = new(maximumThreads);
-		_cancellationTokenSource = new();
+		_useGpu = useGpu;
+		_maxThreads = maxThreads;
 	}
 
-	public async Task CancelAsync() => await _cancellationTokenSource.CancelAsync();
-
-	public async Task Convert(List<DownloadData> dataList, string outputFolder)
+	public async Task ConvertAsync(List<DownloadData> urls, string outputFolder, CancellationToken cancellationToken)
 	{
-		var tasks = dataList.Select(async downloadData =>
+		using var semaphore = new SemaphoreSlim(_maxThreads);
+
+		var processTasks = urls.Select(async urlData =>
 		{
-			await _semaphore.WaitAsync();
+			await semaphore.WaitAsync();
 
 			try
 			{
-				await ConvertSingle(downloadData, outputFolder);
-			}
-			catch (Exception ex)
-			{
-				OnErrorHappened?.Invoke(downloadData, ex);
+				await ConvertSingleAsync(urlData, outputFolder, cancellationToken);
 			}
 			finally
 			{
-				_semaphore.Release();
+				semaphore.Release();
 			}
 
 		}).ToList();
 
-		await Task.WhenAll(tasks);
+		await Task.WhenAll(processTasks);
 	}
 
-	public async Task ConvertSingle(DownloadData downloadData, string outputFolder)
+	private async Task ConvertSingleAsync(DownloadData urlData, string outputFolder, CancellationToken cancellationToken)
 	{
+		var finalPath = Path.Combine(outputFolder, urlData.Data.ToString());
+		var conversion = Xabe.FFmpeg.FFmpeg.Conversions.New()
+			.AddParameter($"-i \"{urlData.Url}\"", ParameterPosition.PreInput)
+			.AddParameter(_useGpu ? "-c:v h264_nvenc" : "-c:v libx264")
+			.SetPriority(ProcessPriorityClass.AboveNormal)
+			.SetOutput(finalPath);
+
+		if (urlData.Data.Extension.Equals(ExtensionType.MP3))
+			conversion.AddParameter("-vn");
+
+		var stopWatch = Stopwatch.StartNew();
+		stopWatch.Start();
+		
 		try
 		{
-			var finalPath = Path.Combine(outputFolder, $"{downloadData.Data.CleanedTitle}{downloadData.Data.ExtensionText}");
-			var conversionProcess = Xabe.FFmpeg.FFmpeg.Conversions.New()
-				.AddParameter($"-i \"{downloadData.Url}\"", ParameterPosition.PreInput)
-				.AddParameter(_gpuUsage ? "-c:v h264_nvenc" : "-c:v libx264")
-				.SetPriority(ProcessPriorityClass.AboveNormal)
-				.SetOutput(finalPath);
+			OnFileStarted?.Invoke(urlData);
 
-			if (downloadData.Data.Type.Equals(TitleType.Song))
-				conversionProcess.AddParameter("-vn");
-
-			var stopWatch = Stopwatch.StartNew();
-			stopWatch.Start();
-
-			OnFileStarted?.Invoke(downloadData);
-
-			conversionProcess.OnProgress += (sender, eventArgs) =>
+			conversion.OnProgress += (sender, eventArgs) =>
 			{
-				OnFileProgress?.Invoke(downloadData, eventArgs);
+				OnFileProgress?.Invoke(urlData, eventArgs);
 			};
 
-			await conversionProcess.Start(_cancellationTokenSource.Token);
+			await conversion.Start(cancellationToken);
 
 			stopWatch.Stop();
-			OnFileCompleted?.Invoke(downloadData, finalPath, stopWatch.Elapsed);
+			OnFileCompleted?.Invoke(urlData, finalPath, stopWatch.Elapsed);
 		}
-		catch (OperationCanceledException)
+		catch (OperationCanceledException oe)
 		{
-			OnFileCancelled?.Invoke(downloadData, _cancellationTokenSource.Token);
+			OnFileCancelled?.Invoke(urlData, cancellationToken);
+			Program.Logger.Warn("User cancelled operation", oe);
 		}
 		catch (Exception ex)
 		{
-			OnErrorHappened?.Invoke(downloadData, ex);
+			OnErrorHappened?.Invoke(urlData, ex, stopWatch.Elapsed);
+			Program.Logger.Warn("Unexpected error occurred", ex);
 		}
-	}
-
-	public void Dispose()
-	{
-		_semaphore.Dispose();
-		_cancellationTokenSource.Dispose();
 	}
 }

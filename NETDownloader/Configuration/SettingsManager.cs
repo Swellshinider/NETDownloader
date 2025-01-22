@@ -1,3 +1,4 @@
+using System.Text;
 using LealForms.Enums;
 using LealForms.Extensions;
 using Newtonsoft.Json;
@@ -24,14 +25,14 @@ public static class SettingsManager
 			Directory.CreateDirectory(SettingsDirectory);
 			var filePath = Path.Combine(SettingsDirectory, "Settings.json");
 			var jsonString = JsonConvert.SerializeObject(_settings!, Formatting.Indented);
-			File.WriteAllText(filePath, jsonString);
+			File.WriteAllText(filePath, jsonString, Encoding.UTF8);
 			Program.Logger.Debug("Saving settings to: " + filePath);
 		}
 		catch (Exception ex)
 		{
 			Program.Logger.Error($"Failed to save settings", ex);
 
-			if (ex.HandleException(ErrorType.Process).Equals(DialogResult.Retry))
+			if (ex.HandleException(ErrorType.Process, "Failed to save settings").Equals(DialogResult.Retry))
 				Save();
 		}
 	}
@@ -53,6 +54,9 @@ public static class SettingsManager
 		}
 		catch (Exception ex)
 		{
+			if (ex.HandleException(ErrorType.Process, "Failed to retrieve settings").Equals(DialogResult.Retry))
+				return Retrieve();
+			
 			Program.Logger.Error($"Failed to retrieve settings, using defaults.", ex);
 			return UserSettings.Default;
 		}

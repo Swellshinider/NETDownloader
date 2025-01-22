@@ -20,7 +20,7 @@ internal sealed class MainView : LealForm
 		Text = $"NETDownloader | by: Swellshinider";
 		Size = new(1280, 720); // 720p
 		MinimumSize = new(640, 320); // 360p
-		FormClosing += (s, e) => _dashboardView.Converter.Dispose();
+		FormClosing += (s, e) => _dashboardView.Dispose();
 	}
 	
 	public UserSettings Settings => _settings;

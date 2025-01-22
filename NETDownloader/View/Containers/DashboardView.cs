@@ -1,4 +1,5 @@
 using System.Drawing.Text;
+using System.Threading.Tasks;
 using LealForms;
 using LealForms.Controls.Buttons;
 using LealForms.Controls.Panels;
@@ -18,31 +19,38 @@ public sealed class DashboardView : LealPanel
 	private readonly LealButton _addButton;
 	private readonly LealButton _startButton;
 	private readonly M3U8Converter _converter;
+	private CancellationTokenSource? _cts;
 
 	public DashboardView() : base(false, true)
 	{
-		_addButton = new((s, e) => OpenModal());
-		_startButton = new((s, e) => StartDownload());
+		_addButton = new((s, e) => Button_AddNew());
+		_startButton = new((s, e) => Button_StartDownload());
+
 		_converter = new(true, 4);
-		_converter.OnFileStarted += StartedDownload;
-		_converter.OnFileProgress += DownloadProgress;
-		_converter.OnFileCompleted += DownloadCompleted;
+		_converter.OnFileStarted += Converter_Started;
+		_converter.OnFileProgress += Conversion_Progress;
+		_converter.OnFileCompleted += Converter_Completed;
+		_converter.OnFileCancelled += Converter_Canceled;
+		_converter.OnErrorHappened += Converter_Error;
 	}
 
 	public M3U8Converter Converter { get => _converter; }
 
-	private IEnumerable<FilePanel> Panels => _downloadPanelsContainer.GetChildrenOfType<FilePanel>();
+	private IEnumerable<FilePanel> FilePanels => _downloadPanelsContainer.GetChildrenOfType<FilePanel>();
 
 	protected override void ReDraw()
 	{
+		this.DockFillWithPadding(0);
+		_background.DockFillWithPadding(0);
 		_addButton.DockTopRightWithPadding(LealConstants.GAP, LealConstants.GAP * 2);
 		_startButton.DockTopRightWithPadding(LealConstants.GAP, LealConstants.GAP * 3 + _addButton.Width);
+		_downloadPanelsContainer.SetX(LealConstants.GAP);
+		_downloadPanelsContainer.SetY(_startButton.Height + LealConstants.GAP * 2);
+		_downloadPanelsContainer.Size = new(_background.Width - LealConstants.GAP * 2, _background.Height - LealConstants.GAP * 2 - _startButton.Height);
 	}
 
 	protected override void LoadComponents()
 	{
-		Dock = DockStyle.Fill;
-		_background.Dock = DockStyle.Fill;
 		_background.BackColor = SettingsManager.UserSettings.Colors.BackgroundColor;
 		this.Add(_background);
 
@@ -51,7 +59,7 @@ public sealed class DashboardView : LealPanel
 		_addButton.Width = 50;
 		_addButton.BorderColor = SettingsManager.UserSettings.Colors.ForegroundColor;
 		_addButton.ForeColor = SettingsManager.UserSettings.Colors.ForegroundColor;
-		
+
 		_background.Add(_startButton);
 		_startButton.Text = "Start";
 		_startButton.Width = 100;
@@ -59,17 +67,13 @@ public sealed class DashboardView : LealPanel
 		_startButton.ForeColor = SettingsManager.UserSettings.Colors.ForegroundColor;
 
 		_background.Add(_downloadPanelsContainer);
-		_downloadPanelsContainer.DockFillWithPadding(
-			LealConstants.GAP,
-			_addButton.Width + LealConstants.GAP * 3,
-			LealConstants.GAP * 2,
-			_addButton.Width + LealConstants.GAP * 3);
-		_downloadPanelsContainer.BorderStyle = BorderStyle.FixedSingle;
+		_downloadPanelsContainer.BorderStyle = BorderStyle.Fixed3D;
+		_downloadPanelsContainer.DockFillWithPadding(0);
 
 		ReDraw();
 	}
 
-	private void OpenModal()
+	private void Button_AddNew()
 	{
 		var size = new Size(740, 400);
 		var posX = _addButton.Location.X - size.Width + _addButton.Width;
@@ -79,15 +83,32 @@ public sealed class DashboardView : LealPanel
 		modal.ShowDialog();
 	}
 
-	private async void StartDownload()
+	private async void Button_StartDownload()
 	{
-		var allData = Panels.Where(p => !p.Finished && !p.InProgress).Select(p => p.DownloadData);
-		await _converter.Convert([.. allData], @"C:\Users\dute2\Downloads");
+		var urlsData = new List<DownloadData>();
+
+		if (_cts != null)
+		{
+			await _cts.CancelAsync();
+			_cts.Dispose();
+		}
+
+		_cts = new();
+
+		foreach (var filePanel in FilePanels)
+		{
+			if (filePanel.InProgress || filePanel.Finished)
+				continue;
+
+			urlsData.Add(filePanel.DownloadData);
+		}
+
+		await _converter.ConvertAsync(urlsData, "C:\\Users\\dute2\\Downloads", _cts.Token);
 	}
 
 	private void DownloadDataGenerated(object? sender, DownloadData e)
 	{
-		if (_downloadPanelsContainer.GetChildrenOfType<FilePanel>().Where(p => p.DownloadData == e).Count() > 0)
+		if (FilePanels.Where(p => p.DownloadData == e).Any())
 		{
 			MessageBox.Show("This one was already added", "Already added", MessageBoxButtons.OK);
 			return;
@@ -97,12 +118,59 @@ public sealed class DashboardView : LealPanel
 		_downloadPanelsContainer.WaterFallChildControlsOfTypeByY<FilePanel>(0, LealConstants.GAP / 2);
 	}
 
-	private void StartedDownload(DownloadData fileData)
-		=> Panels.Where(p => p.DownloadData == fileData).First().Begin();
+	private void Converter_Started(DownloadData urlData)
+	{
+		var conversionPanel = FilePanels.FirstOrDefault(c => c.DownloadData == urlData);
 
-	private void DownloadProgress(DownloadData fileData, ConversionProgressEventArgs eventArgs)
-	 	=> Panels.Where(p => p.DownloadData == fileData).First().Update(eventArgs);
+		if (conversionPanel == null)
+			return;
 
-	private void DownloadCompleted(DownloadData fileData, string finalPath, TimeSpan timeSpent)
-		=> Panels.Where(p => p.DownloadData == fileData).First().Finish(timeSpent);
+		conversionPanel.Begin();
+	}
+
+	private void Conversion_Progress(DownloadData urlData, ConversionProgressEventArgs progress)
+	{
+		var conversionPanel = FilePanels.FirstOrDefault(c => c.DownloadData == urlData);
+
+		if (conversionPanel == null)
+			return;
+
+		conversionPanel.UpdateProgress(progress);
+	}
+
+	private void Converter_Completed(DownloadData urlData, string finalPath, TimeSpan timeSpan)
+	{
+		var conversionPanel = FilePanels.FirstOrDefault(c => c.DownloadData == urlData);
+
+		if (conversionPanel == null)
+			return;
+
+		conversionPanel.Finish(timeSpan);
+	}
+
+	private void Converter_Canceled(DownloadData urlData, CancellationToken cancellationToken)
+	{
+		var conversionPanel = FilePanels.FirstOrDefault(c => c.DownloadData == urlData);
+
+		if (conversionPanel == null)
+			return;
+
+		conversionPanel.Cancel();
+	}
+
+	private void Converter_Error(DownloadData urlData, Exception exception, TimeSpan timeSpan)
+	{
+		var conversionPanel = FilePanels.FirstOrDefault(c => c.DownloadData == urlData);
+
+		if (conversionPanel == null)
+			return;
+
+		conversionPanel.SetError(exception.Message, timeSpan);
+	}
+
+	protected override void Dispose(bool disposing)
+	{
+		_cts?.Dispose();
+		base.Dispose(disposing);
+	}
 }

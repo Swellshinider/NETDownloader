@@ -49,8 +49,9 @@ public sealed class FilePanel : LealPanel
 		_progressBar.Dock = DockStyle.Bottom;
 		_progressBar.Height = 4;
 		_progressBar.Value = 0;
+		_progressBar.Minimum = 0;
 		_progressBar.Maximum = 100;
-		_progressBar.BackColor = SettingsManager.UserSettings.Colors.BackgroundColor;
+		_progressBar.BackColor = SettingsManager.UserSettings.Colors.SecondaryBackgroundColor;
 
 		this.Add(_progressLabel);
 		_progressLabel.Text = $"Not started";
@@ -67,6 +68,7 @@ public sealed class FilePanel : LealPanel
 		_buttonError.DockBottomLeftWithPadding(_progressBar.Height + _progressLabel.Height, 0);
 
 		this.DockLeftRightWithPadding(0, 0);
+		_progressBar.BringToFront();
 	}
 
 	public void Begin()
@@ -78,18 +80,18 @@ public sealed class FilePanel : LealPanel
 		{
 			_progressBar.Invoke(() =>
 			{
-				_progressBar.Value = 100;
+				_progressBar.Value = 0;
 				_progressLabel.Text = $"Started";
 			});
 		}
 		else
 		{
-			_progressBar.Value = 100;
+			_progressBar.Value = 0;
 			_progressLabel.Text = $"Started";
 		}
 	}
 
-	public void Update(ConversionProgressEventArgs progress)
+	public void UpdateProgress(ConversionProgressEventArgs progress)
 	{
 		var percentage = Math.Min(100, Math.Max(0, progress.Percent));
 		BackColor = _beginColor.BlendColors(_endColor, percentage / 100);
@@ -99,13 +101,13 @@ public sealed class FilePanel : LealPanel
 			_progressBar.Invoke(() =>
 			{
 				_progressBar.Value = percentage;
-				_progressLabel.Text = $"Progress: {(percentage / 100f).ToString("D2")}%";
+				_progressLabel.Text = $"Progress: {FormatSpan(progress.Duration)}/{FormatSpan(progress.TotalLength)} ({percentage}%)";
 			});
 		}
 		else
 		{
 			_progressBar.Value = percentage;
-			_progressLabel.Text = $"Progress: {(percentage / 100f).ToString("D2")}%";
+			_progressLabel.Text = $"Progress: {FormatSpan(progress.Duration)}/{FormatSpan(progress.TotalLength)} ({percentage}%)";
 		}
 	}
 
@@ -130,7 +132,7 @@ public sealed class FilePanel : LealPanel
 		}
 	}
 
-	internal void SetError(string message)
+	internal void SetError(string message, TimeSpan timeSpan)
 	{
 		_inProgress = false;
 		_finished = true;
@@ -142,14 +144,14 @@ public sealed class FilePanel : LealPanel
 			{
 				_progressLabel.Text = "Error occurred while processing";
 				_buttonError!.Visible = true;
-				_buttonError!.Click += (s, e) => MessageBox.Show(message, "Error Details", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				_buttonError!.Click += (s, e) => MessageBox.Show(message, $"Error at {FormatSpan(timeSpan)}", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			});
 		}
 		else
 		{
 			_progressLabel.Text = "Error occurred while processing";
 			_buttonError!.Visible = true;
-			_buttonError!.Click += (s, e) => MessageBox.Show(message, "Error Details", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			_buttonError!.Click += (s, e) => MessageBox.Show(message, $"Error at {FormatSpan(timeSpan)}", MessageBoxButtons.OK, MessageBoxIcon.Error);
 		}
 	}
 

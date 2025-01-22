@@ -7,7 +7,6 @@ using LealForms.Extensions;
 using NETDownloader.View;
 using NETDownloader.Configuration;
 using System.Runtime.InteropServices;
-using LealForms;
 
 namespace NETDownloader;
 
@@ -41,8 +40,9 @@ internal static partial class Program
 			var logDirectory = $@"{SettingsManager.SettingsDirectory}\\Logs";
 			Directory.CreateDirectory(logDirectory);
 			Logger = new LoggerBuilder()
+						.SetMinimumLogLevel(LogLevel.DEBUG)
 						.SetQueueCapacity(100)
-						.AddConsoleHandler(LogLevel.INFO)
+						.AddConsoleHandler(LogLevel.DEBUG)
 						.AddFileHandler(Path.Combine(logDirectory, $"NETDownloader_[{DateTime.Now:dd-MM-yyyy}].log"), LogLevel.DEBUG)
 						.Build();
 		}
@@ -100,10 +100,10 @@ internal static partial class Program
 		}
 		finally
 		{
-			_mainView.Settings.Location = _mainView.Location;
 			SettingsManager.UserSettings = _mainView.Settings;
+			_mainView.Settings.Location = _mainView.Location;
+			_mainView.Dispose();
 			SettingsManager.Save();
-			
 			Logger.Dispose();
 			FreeConsole();
 		}
