@@ -18,6 +18,7 @@ public sealed class DownloadModal : LealModal
 	public event EventHandler<DownloadData>? DownloadDataGenerated;
 
 	private readonly LealPanel _background = new(true, true);
+	private readonly LealTextBox _titleTextBox = new();
 	private readonly LealCombo _comboFileType = new(50);
 	private readonly LealTextBox _seasonTextBox = new();
 	private readonly LealTextBox _episodeTextBox = new();
@@ -57,20 +58,17 @@ public sealed class DownloadModal : LealModal
 		_background.Add(urlInput);
 		urlInput.AddX(LealConstants.GAP);
 
-		var title = new LealTextBox()
-		{
-			Height = 50,
-			Width = (int)(Width * 0.6),
-			Placeholder = "Title",
-			BorderStyle = BorderStyle.FixedSingle,
-			ForeColor = SettingsManager.UserSettings.Colors.ForegroundColor,
-			BackColor = SettingsManager.UserSettings.Colors.SecondaryBackgroundColor,
-		};
-		_background.Add(title);
-		title.AddX(LealConstants.GAP);
+		_background.Add(_titleTextBox);
+		_titleTextBox.Height = 50;
+		_titleTextBox.Width = (int)(Width * 0.6);
+		_titleTextBox.Placeholder = "Title";
+		_titleTextBox.BorderStyle = BorderStyle.FixedSingle;
+		_titleTextBox.ForeColor = SettingsManager.UserSettings.Colors.ForegroundColor;
+		_titleTextBox.BackColor = SettingsManager.UserSettings.Colors.SecondaryBackgroundColor;
+		_titleTextBox.AddX(LealConstants.GAP);
 
 		_background.Add(_comboFileType);
-		_comboFileType.Width = urlInput.Width - title.Width - LealConstants.GAP;
+		_comboFileType.Width = urlInput.Width - _titleTextBox.Width - LealConstants.GAP;
 		_comboFileType.DropdownItemHeight = 25;
 		_comboFileType.DropdownBackColor = SettingsManager.UserSettings.Colors.SecondaryBackgroundColor;
 		_comboFileType.DropdownForeColor = SettingsManager.UserSettings.Colors.ForegroundColor;
@@ -134,11 +132,11 @@ public sealed class DownloadModal : LealModal
 		_background.CentralizeWithSpacingChildrensOfTypeByX<LealButton>(LealConstants.GAP * 2);
 		buttonAdd.DockBottomWithPadding(LealConstants.GAP);
 		buttonClose.DockBottomWithPadding(LealConstants.GAP);
-		_comboFileType.SetXAfterControl(title, LealConstants.GAP);
-		_comboFileType.SetY(title.Location.Y);
+		_comboFileType.SetXAfterControl(_titleTextBox, LealConstants.GAP);
+		_comboFileType.SetY(_titleTextBox.Location.Y);
 		_yearTextBox.Location = _seasonTextBox.Location;
 		_episodeTextBox.SetXAfterControl(_seasonTextBox, LealConstants.GAP);
-		_episodeTextBox.SetYAfterControl(title, LealConstants.GAP / 2);
+		_episodeTextBox.SetYAfterControl(_titleTextBox, LealConstants.GAP / 2);
 		ReDraw();
 	}
 
@@ -198,9 +196,11 @@ public sealed class DownloadModal : LealModal
 				"Invalid Number", MessageBoxButtons.OK);
 			return;
 		}
+		
+		if (string.IsNullOrEmpty(_titleTextBox.Text))
+			_titleTextBox.Text = "Untitled";
 			
-		// TODO
-		var seriesData = new SeriesData(_currentText, season, episode, _titleType, ExtensionType.MP4);
+		var seriesData = new SeriesData(_titleTextBox.Text, season, episode, _titleType, ExtensionType.MP4);
 		var downloadData = new DownloadData(_currentText, seriesData);
 		DownloadDataGenerated?.Invoke(this, downloadData);
 	}

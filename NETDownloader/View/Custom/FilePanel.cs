@@ -35,7 +35,7 @@ public sealed class FilePanel : LealPanel
 
 	protected override void LoadComponents()
 	{
-		Height = 100;
+		BorderStyle = BorderStyle.Fixed3D;
 
 		this.Add(_titleLabel);
 		_titleLabel.Text = $"{DownloadData.Data}";

@@ -9,7 +9,7 @@ public class UserSettings
 	{
 		Location = new(0, 0),
 		Size = new(1280, 720),
-		CardHeight = 250,
+		CardHeight = 150,
 		Maximized = false,
 		Colors = new() 
 		{
