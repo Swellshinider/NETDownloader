@@ -9,8 +9,18 @@ public class UserSettings
 	{
 		Location = new(0, 0),
 		Size = new(1280, 720),
-		SplitterDistance = 250,
-		Maximized = false
+		CardHeight = 250,
+		Maximized = false,
+		Colors = new() 
+		{
+			BackgroundColor = Color.FromArgb(34, 40, 49),
+			SecondaryBackgroundColor = Color.FromArgb(57, 62, 70),
+			ForegroundColor = Color.WhiteSmoke,
+			HighLightColor = Color.FromArgb(0, 173, 181),
+			ContrastBackColor = Color.FromArgb(238, 238, 238),
+			DownloadStartColor = Color.Red,
+			DownloadFinishedColor = Color.Blue
+		}
 	};
 
 	[JsonPropertyName("size")]
@@ -19,12 +29,15 @@ public class UserSettings
 	[JsonPropertyName("location")]
 	public Point Location { get; set; }
 
-	[JsonPropertyName("splitter_distance")]
-	public int SplitterDistance { get; set; }
+	[JsonPropertyName("card_height")]
+	public int CardHeight { get; set; }
 
 	[JsonPropertyName("maximized")]
 	public bool Maximized { get; set; }
 
 	[JsonPropertyName("console_visible")]
 	public bool ConsoleVisible { get; set; }
+
+	[JsonPropertyName("colors")]
+	public required ColorPalette Colors { get; set; }
 }

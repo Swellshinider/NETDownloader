@@ -1,4 +1,3 @@
-using LealForms.Controls.Buttons;
 using LealForms.Controls.Forms;
 using LealForms.Controls.Miscellaneous;
 using LealForms.Controls.Panels;
@@ -56,7 +55,7 @@ internal sealed class MainView : LealForm
 
 		this.Add(_menuStrip);
 		_menuStrip.Dock = DockStyle.Top;
-		_menuStrip.BackColor = ColorPalette.BackgroundColor;
+		_menuStrip.BackColor = _settings.Colors.BackgroundColor;
 
 		MenuStripLoad_Settings();
 		MenuStripLoad_Help();
@@ -69,7 +68,7 @@ internal sealed class MainView : LealForm
 		_topSeparator.Height = 3;
 		_topSeparator.LineThickness = 3;
 		_topSeparator.Orientation = Orientation.Horizontal;
-		_topSeparator.LineColor = ColorPalette.HighLightColor;
+		_topSeparator.LineColor = _settings.Colors.HighLightColor;
 		
 		this.Add(_topSeparator);
 		_topSeparator.DockTopLeftRightWithPadding(_menuStrip.Height, 0, 0);
@@ -94,7 +93,7 @@ internal sealed class MainView : LealForm
 			}
 		}
 		
-		_containerPanel.BackColor = ColorPalette.BackgroundColor;
+		_containerPanel.BackColor = _settings.Colors.BackgroundColor;
 		
 		Program.Logger.Debug("Themes loaded.");
 		#endregion
@@ -103,11 +102,11 @@ internal sealed class MainView : LealForm
 	private void MenuStripLoad_Settings()
 	{
 		var settingsMenu = CreateMenuItem("Settings");
-		settingsMenu.DropDown.BackColor = ColorPalette.BackgroundColor;
+		settingsMenu.DropDown.BackColor = _settings.Colors.BackgroundColor;
 		
-		settingsMenu.ForeColor = ColorPalette.ForegroundColor;
+		settingsMenu.ForeColor = _settings.Colors.ForegroundColor;
 		settingsMenu.DropDownOpened += (s, e) => settingsMenu.ForeColor = Color.Black;
-		settingsMenu.DropDownClosed += (s, e) => settingsMenu.ForeColor = ColorPalette.ForegroundColor;
+		settingsMenu.DropDownClosed += (s, e) => settingsMenu.ForeColor = _settings.Colors.ForegroundColor;
 		
 		_menuStrip.Items.Add(settingsMenu);
 		settingsMenu.DropDownItems.Add(CreateMenuItem("Appearance"));
@@ -119,11 +118,11 @@ internal sealed class MainView : LealForm
 	private void MenuStripLoad_Help()
 	{
 		var helpMenu = CreateMenuItem("Help");
-		helpMenu.DropDown.BackColor = ColorPalette.BackgroundColor;
+		helpMenu.DropDown.BackColor = _settings.Colors.BackgroundColor;
 		
-		helpMenu.ForeColor = ColorPalette.ForegroundColor;
+		helpMenu.ForeColor = _settings.Colors.ForegroundColor;
 		helpMenu.DropDownOpened += (s, e) => helpMenu.ForeColor = Color.Black;
-		helpMenu.DropDownClosed += (s, e) => helpMenu.ForeColor = ColorPalette.ForegroundColor;
+		helpMenu.DropDownClosed += (s, e) => helpMenu.ForeColor = _settings.Colors.ForegroundColor;
 
 		_menuStrip.Items.Add(helpMenu);
 		helpMenu.DropDownItems.Add(CreateMenuItem("About", Keys.F1));
@@ -138,22 +137,12 @@ internal sealed class MainView : LealForm
 		helpMenu.DropDownItems.Add(CreateMenuItem("Debug Console", Keys.Control | Keys.Shift | Keys.Y, ToggleConsole));
 	}
 
-	private void ToggleConsole(object? sender, EventArgs e)
-	{
-		_settings.ConsoleVisible = !_settings.ConsoleVisible;
-		
-		if (_settings.ConsoleVisible)
-			Program.ShowConsole();
-		else 
-			Program.HideConsole();
-	}
-
-	private static ToolStripMenuItem CreateMenuItem(string text, Keys shortcutKeys = Keys.None, EventHandler? handler = null)
+	private ToolStripMenuItem CreateMenuItem(string text, Keys shortcutKeys = Keys.None, EventHandler? handler = null)
 	{
 		var item = new ToolStripMenuItem(text)
 		{
-			ForeColor = ColorPalette.ForegroundColor,
-			BackColor = ColorPalette.BackgroundColor
+			ForeColor = _settings.Colors.ForegroundColor,
+			BackColor = _settings.Colors.BackgroundColor
 		};
 		
 		if (shortcutKeys != Keys.None)
@@ -170,5 +159,15 @@ internal sealed class MainView : LealForm
 			item.Click += handler;
 
 		return item;
+	}
+
+	private void ToggleConsole(object? sender, EventArgs e)
+	{
+		_settings.ConsoleVisible = !_settings.ConsoleVisible;
+		
+		if (_settings.ConsoleVisible)
+			Program.ShowConsole();
+		else 
+			Program.HideConsole();
 	}
 }
